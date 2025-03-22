@@ -10,7 +10,7 @@ def start(message):
     connect = sqlite3.connect('schedulerbot.db')
     cursor = connect.cursor()
     cursor.execute('CREATE TABLE IF NOT EXISTS notes('
-                   'id int auto_increment PRIMARY KEY, '
+                   'id INTEGER PRIMARY KEY AUTOINCREMENT, '
                    'user_id varchar(50),'
                    'note_text varchar(50))'
                    )
@@ -19,9 +19,10 @@ def start(message):
     connect.close()
 
     keyboard = types.ReplyKeyboardMarkup(row_width=2)
-    button1 = types.KeyboardButton('Добавить заметку')
-    button2 = types.KeyboardButton('Удалить заметку')
-    keyboard.add(button1, button2)
+    button_add_note = types.KeyboardButton('Добавить заметку')
+    button_list_note = types.KeyboardButton('Удалить заметку')
+    button_delete_note = types.KeyboardButton('Список заметок')
+    keyboard.add(button_add_note, button_list_note, button_delete_note)
     bot.reply_to(message, 'Привет! Выберите действие:', reply_markup=keyboard)
 
 @bot.message_handler(func=lambda message: message.text == 'Добавить заметку')
@@ -68,5 +69,21 @@ def delete_note(call):
     connect.close()
     bot.answer_callback_query(call.id, 'Заметка удалена!')
     bot.delete_message(call.message.chat.id, call.message.message_id)
+
+@bot.message_handler(func=lambda message: message.text == 'Список заметок')
+def list_notes(message):
+    connect = sqlite3.connect('schedulerbot.db')
+    cursor = connect.cursor()
+    cursor.execute('SELECT note_text FROM notes WHERE user_id = ?', (str(message.chat.id),))
+    notes = cursor.fetchall()
+    cursor.close()
+    connect.close()
+
+    if not notes:
+        bot.reply_to(message, 'У вас нет сохраненных заметок.')
+        return
+
+    notes_list = '\n'.join([note[0] for note in notes])
+    bot.reply_to(message, f'Ваши заметки:\n{notes_list}')
 
 bot.polling()
