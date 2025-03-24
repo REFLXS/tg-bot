@@ -1,6 +1,7 @@
 import config
 import telebot
 import sqlite3
+from datetime import datetime
 from telebot import types
 
 bot = telebot.TeleBot(config.TOKEN)
@@ -12,8 +13,9 @@ def start(message):
     cursor.execute('CREATE TABLE IF NOT EXISTS notes('
                    'id INTEGER PRIMARY KEY AUTOINCREMENT, '
                    'user_id varchar(50),'
-                   'note_text varchar(50))'
-                   )
+                   'note_text varchar(200),'
+                   'note_date DATETIME,'
+                   'note_end_date DATETIME)')
     connect.commit()
     cursor.close()
     connect.close()
@@ -21,19 +23,21 @@ def start(message):
     keyboard = types.ReplyKeyboardMarkup(row_width=2)
     button_add_note = types.KeyboardButton('Добавить заметку')
     button_list_note = types.KeyboardButton('Удалить заметку')
-    button_delete_note = types.KeyboardButton('Список заметок')
-    keyboard.add(button_add_note, button_list_note, button_delete_note)
+    button_show_notes = types.KeyboardButton('Список заметок')
+    keyboard.add(button_add_note, button_list_note, button_show_notes)
     bot.reply_to(message, 'Привет! Выберите действие:', reply_markup=keyboard)
 
 @bot.message_handler(func=lambda message: message.text == 'Добавить заметку')
 def add_note_request(message):
-    msg = bot.reply_to(message, 'Введите текст заметки:')
+    msg = bot.reply_to(message, 'Введите текст заметки:\nДобавьте к заметке дату в формате День.Месяц.Год')
     bot.register_next_step_handler(msg, save_note)
 
 def save_note(message):
     connect = sqlite3.connect('schedulerbot.db')
     cursor = connect.cursor()
-    cursor.execute('INSERT INTO notes (user_id, note_text) VALUES (?, ?)', (str(message.chat.id), message.text))
+    now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    cursor.execute('INSERT INTO notes (user_id, note_text, note_date) VALUES (?, ?, ?)',
+                   (str(message.chat.id), message.text, now))
     connect.commit()
     cursor.close()
     connect.close()
@@ -43,7 +47,7 @@ def save_note(message):
 def delete_note_request(message):
     connect = sqlite3.connect('schedulerbot.db')
     cursor = connect.cursor()
-    cursor.execute('SELECT id, note_text FROM notes WHERE user_id = ?', (str(message.chat.id),))
+    cursor.execute('SELECT id, note_text, note_date FROM notes WHERE user_id = ?', (str(message.chat.id),))
     notes = cursor.fetchall()
     cursor.close()
     connect.close()
@@ -54,7 +58,7 @@ def delete_note_request(message):
 
     keyboard = types.InlineKeyboardMarkup()
     for note in notes:
-        button = types.InlineKeyboardButton(text=note[1], callback_data=f'delete_{note[0]}')
+        button = types.InlineKeyboardButton(text=f"{note[1]} ({note[2]})", callback_data=f'delete_{note[0]}')
         keyboard.add(button)
     bot.reply_to(message, 'Выберите заметку для удаления:', reply_markup=keyboard)
 
@@ -74,7 +78,7 @@ def delete_note(call):
 def list_notes(message):
     connect = sqlite3.connect('schedulerbot.db')
     cursor = connect.cursor()
-    cursor.execute('SELECT note_text FROM notes WHERE user_id = ?', (str(message.chat.id),))
+    cursor.execute('SELECT note_text, note_date FROM notes WHERE user_id = ?', (str(message.chat.id),))
     notes = cursor.fetchall()
     cursor.close()
     connect.close()
@@ -83,7 +87,7 @@ def list_notes(message):
         bot.reply_to(message, 'У вас нет сохраненных заметок.')
         return
 
-    notes_list = '\n'.join([note[0] for note in notes])
+    notes_list = '\n'.join([f"{note[0]} ({note[1]})" for note in notes])
     bot.reply_to(message, f'Ваши заметки:\n{notes_list}')
 
 bot.polling()
