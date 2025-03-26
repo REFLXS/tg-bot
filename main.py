@@ -1,3 +1,4 @@
+import time_parser
 import config
 import telebot
 import sqlite3
