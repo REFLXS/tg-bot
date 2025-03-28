@@ -1,59 +1,74 @@
 from typing import Dict, List
+from TimeParser import TimeParser
 import sqlite3
 
-connection = sqlite3.connect("schedulerbot.db")
-cursor = connection.cursor()
+parser = TimeParser()
 
+def get_connection():
+    return sqlite3.connect("schedulerbot.db", check_same_thread=False)
 
-def insert(table: str, column_values: Dict):
-    columns = ', '.join(column_values.keys())
-    values = [tuple(column_values.values())]
-    placeholders = ', '.join('?' * len(column_values.keys()))
-    cursor.executemany(
-        f"insert into {table}"
-        f"({columns})"
-        f"values ({placeholders})",
-        values)
-    connection.commit()
+def create_table():
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute('CREATE TABLE IF NOT EXISTS notes('
+                   'id INTEGER PRIMARY KEY AUTOINCREMENT, '
+                   'user_id varchar(50),'
+                   'note_text varchar(200),'
+                   'note_date DATETIME,'
+                   'note_end_date DATETIME)')
+    conn.commit()
+    cursor.close()
+    conn.close()
 
+def add_note(message, datetime):
+    conn = get_connection()
+    cursor = conn.cursor()
+    now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    cursor.execute('INSERT INTO notes('
+                   'user_id, '
+                   'note_text, '
+                   'note_date) VALUES '
+                   '(?, ?, ?)',
+                    (
+                        str(message.chat.id),
+                        message.text,
+                        now,))
+    conn.commit()
+    cursor.close()
+    conn.close()
 
-def fetchall(table: str, columns: List[str]) -> List[Dict]:
-    columns_joined = ', '.join(columns)
-    cursor.execute(f"select {columns_joined} from {table}")
-    rows = cursor.fetchall()
-    rezult = []
-    for row in rows:
-        dict_row = {}
-        for index, column in enumerate(columns):
-            dict_row[column] = row[index]
-        rezult.append(dict_row)
-    return rezult
+def delete_note(note_id: int):
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute('DELETE FROM notes WHERE id = ?', (note_id,))
+    conn.commit()
+    cursor.close()
+    conn.close()
 
+def delete_all_user_notes(user_id: str):
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute('DELETE FROM notes WHERE user_id = ?', (user_id,))
+    deleted_count = cursor.rowcount
+    conn.commit()
+    cursor.close()
+    conn.close()
+    return deleted_count
 
-def delete(table: str, row_id: int) -> None:
-    row_id = int(row_id)
-    cursor.execute(f"delete from {table} where id={row_id}")
-    connection.commit()
+def get_user_notes(user_id: str):
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute('SELECT id, note_text, note_date FROM notes WHERE user_id = ?', (user_id,))
+    notes = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    return notes
 
-
-def get_cursor():
-    return cursor
-
-
-def check_db_exists():
-    cursor.execute("select name from sqlite_master "
-                   "where type='table' and name='task'")
-    table_exists = cursor.fetchall()
-    if table_exists:
-        return
-    _init_db()
-
-
-def _init_db():
-    with open("createdb.sql", "r") as f:
-        sql = f.read()
-        cursor.executescript(sql)
-        connection.commit()
-
-
-check_db_exists()
+def get_note_by_id(note_id: int):
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute('SELECT * FROM notes WHERE id = ?', (note_id,))
+    note = cursor.fetchone()
+    cursor.close()
+    conn.close()
+    return note

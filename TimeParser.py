@@ -2,7 +2,7 @@ import re
 from datetime import datetime, timedelta, date, time
 
 
-class Time():
+class TimeParser():
     def __init__(self):
         self.reg_date = re.compile(r'(\d{4}/\d{1,2}/\d{1,2} \d{2}:\d{2}) (.*)')
         self.reg_word = re.compile(r'([а-я ]* в \d{2}:\d{2}) (.*)')
