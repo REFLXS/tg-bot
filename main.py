@@ -8,13 +8,15 @@ from telebot import types
 bot = telebot.TeleBot(config.TOKEN)
 parser = TimeParser()
 
-# Тестовые вызовы парсера (можно закомментировать)
-print(parser.parse_raw_date("2023/12/31 23:59"))
-print(parser.input_word_and_time("завтра", "15:30"))
-print(parser.input_word("послезавтра"))
-print(parser.parse_string("сегодня в 14:00"))
+# Тестовые вызовы парсера
+# print(parser.parse_raw_date("2023/12/31 23:59"))
+# print(parser.input_word_and_time("завтра", "15:30"))
+# print(parser.input_word("послезавтра"))
+# print(parser.parse_string("сегодня в 14:00"))
+# print(parser.parse("2023/12/31 23:59 Новый год"))
+# print(parser.parse(""))
+
 print(parser.parse("2023/12/31 23:59 Новый год"))
-print(parser.parse(""))
 
 
 @bot.message_handler(commands=['start'])

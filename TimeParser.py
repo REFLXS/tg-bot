@@ -20,30 +20,18 @@ class TimeParser():
             return None
         return result
 
-    def input_word_and_time(self, word, time):
-        time_to_add = datetime.strptime(time, "%H:%M").time()
+    def input_word_and_time(self, word, time_str):
         if word not in self.days_and_shift:
             return None
-        date_to_add = date.today() + self.days_and_shift[word]
-        return datetime.combine(date_to_add, time_to_add)
+        date_part = date.today() + self.days_and_shift[word]
+        time_part = datetime.strptime(time_str, "%H:%M").time()
+        return datetime.combine(date_part, time_part)
 
     def input_word(self, word):
-        today_date = datetime.today().date()
+        today_date = date.today()
         if word not in self.days_and_shift:
             return None
-        result = today_date + self.days_and_shift[word]
-        return result
-
-    def parse_string(self, input_string):
-        if ':' in input_string:
-            input_list = input_string.split(' в ')
-            word = input_list[0]
-            time = input_list[1]
-            result = self.input_word_and_time(word, time)
-        else:
-            word = input_string
-            result = self.input_word(word)
-        return result
+        return datetime.combine(today_date + self.days_and_shift[word], time(0, 0))
 
     def parse(self, input_string):
         if not input_string:
@@ -51,16 +39,14 @@ class TimeParser():
 
         match_reg_date = self.reg_date.match(input_string)
         if match_reg_date:
-            return self.parse_raw_date(match_reg_date.group(1)), match_reg_date.group(2)
+            return self.parse_raw_date(match_reg_date.group(1))
 
-        match_reg_word = self.reg_word.match(input_string)
-        if match_reg_word:
-            return self.parse_string(match_reg_word.group(1)), match_reg_word.group(2)
+        words = input_string.split()
+        if words[0] in self.days_and_shift:
+            if 'в' in words:
+                idx = words.index('в')
+                time_str = words[idx + 1] if idx + 1 < len(words) else "00:00"
+                return self.input_word_and_time(words[0], time_str)
+            return self.input_word(words[0])
 
-        first_word = input_string.split()[0]
-        if first_word in self.days_and_shift:
-            if first_word == input_string:
-                return self.parse_string(first_word), ''
-            else:
-                return self.parse_string(first_word), input_string[len(first_word) + 1:]
         return None

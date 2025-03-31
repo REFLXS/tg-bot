@@ -14,6 +14,7 @@ def create_table():
                    'id INTEGER PRIMARY KEY AUTOINCREMENT, '
                    'user_id varchar(50),'
                    'note_text varchar(200),'
+                   'completed, bool,'
                    'note_date DATETIME,'
                    'note_end_date DATETIME)')
     conn.commit()
@@ -27,12 +28,14 @@ def add_note(message, datetime):
     cursor.execute('INSERT INTO notes('
                    'user_id, '
                    'note_text, '
-                   'note_date) VALUES '
-                   '(?, ?, ?)',
+                   'note_date,'
+                   'note_end_date) VALUES '
+                   '(?, ?, ?, ?)',
                     (
                         str(message.chat.id),
                         message.text,
-                        now,))
+                        now,
+                        parser.parse(message.text),))
     conn.commit()
     cursor.close()
     conn.close()
