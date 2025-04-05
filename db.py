@@ -14,7 +14,7 @@ def create_table():
                    'id INTEGER PRIMARY KEY AUTOINCREMENT, '
                    'user_id varchar(50),'
                    'note_text varchar(200),'
-                   'completed, bool,'
+                   'completed BOOLEAN DEFAULT 0,'
                    'note_date DATETIME,'
                    'note_end_date DATETIME)')
     conn.commit()
@@ -75,3 +75,33 @@ def get_note_by_id(note_id: int):
     cursor.close()
     conn.close()
     return note
+
+def get_all_pending_notes():
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute('SELECT * FROM notes WHERE completed IS NULL OR completed = 0')
+    notes = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    return notes
+
+def mark_note_completed(note_id: int):
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute('UPDATE notes SET completed = 1 WHERE id = ?', (note_id,))
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+def clear_database():
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute('DELETE FROM notes')
+        conn.commit()
+        print("🧹 Все данные из таблицы 'notes' удалены.")
+    except Exception as e:
+        print(f"❌ Ошибка при очистке БД: {e}")
+    finally:
+        cursor.close()
+        conn.close()

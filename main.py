@@ -1,3 +1,4 @@
+from Reminder import Reminder
 from TimeParser import TimeParser
 import config
 import telebot
@@ -21,6 +22,7 @@ print(parser.parse("2023/12/31 23:59 Новый год"))
 
 @bot.message_handler(commands=['start'])
 def start(message):
+    # db.clear_database()
     db.create_table()
 
     keyboard = types.ReplyKeyboardMarkup(row_width=2, resize_keyboard=True)
@@ -127,4 +129,9 @@ def handle_unknown(message):
 
 
 if __name__ == '__main__':
-    bot.polling(none_stop=True)
+    reminder = Reminder(bot)
+    reminder.start()
+    try:
+        bot.polling(none_stop=True)
+    except KeyboardInterrupt:
+        reminder.stop()
