@@ -1,11 +1,13 @@
-from typing import Dict, List
 from TimeParser import TimeParser
 import sqlite3
+from datetime import datetime
 
 parser = TimeParser()
 
+
 def get_connection():
     return sqlite3.connect("schedulerbot.db", check_same_thread=False)
+
 
 def create_table():
     conn = get_connection()
@@ -21,24 +23,33 @@ def create_table():
     cursor.close()
     conn.close()
 
-def add_note(message, datetime):
+
+def add_note(user_id: str, note_text: str, note_end_date: str):
+    """
+    Добавляет новую заметку в базу данных
+    :param user_id: ID пользователя
+    :param note_text: Текст заметки
+    :param note_end_date: Дата и время заметки в формате строки
+    """
     conn = get_connection()
     cursor = conn.cursor()
     now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
     cursor.execute('INSERT INTO notes('
                    'user_id, '
                    'note_text, '
                    'note_date,'
                    'note_end_date) VALUES '
                    '(?, ?, ?, ?)',
-                    (
-                        str(message.chat.id),
-                        message.text,
-                        now,
-                        parser.parse(message.text),))
+                   (
+                       user_id,
+                       note_text,
+                       now,
+                       note_end_date,))
     conn.commit()
     cursor.close()
     conn.close()
+
 
 def delete_note(note_id: int):
     conn = get_connection()
@@ -47,6 +58,7 @@ def delete_note(note_id: int):
     conn.commit()
     cursor.close()
     conn.close()
+
 
 def delete_all_user_notes(user_id: str):
     conn = get_connection()
@@ -58,14 +70,17 @@ def delete_all_user_notes(user_id: str):
     conn.close()
     return deleted_count
 
+
 def get_user_notes(user_id: str):
     conn = get_connection()
     cursor = conn.cursor()
-    cursor.execute('SELECT id, note_text, note_date FROM notes WHERE user_id = ?', (user_id,))
+    cursor.execute('SELECT id, note_text, note_end_date FROM notes WHERE user_id = ? ORDER BY note_end_date',
+                   (user_id,))
     notes = cursor.fetchall()
     cursor.close()
     conn.close()
     return notes
+
 
 def get_note_by_id(note_id: int):
     conn = get_connection()
@@ -76,6 +91,7 @@ def get_note_by_id(note_id: int):
     conn.close()
     return note
 
+
 def get_all_pending_notes():
     conn = get_connection()
     cursor = conn.cursor()
@@ -85,6 +101,7 @@ def get_all_pending_notes():
     conn.close()
     return notes
 
+
 def mark_note_completed(note_id: int):
     conn = get_connection()
     cursor = conn.cursor()
@@ -92,6 +109,7 @@ def mark_note_completed(note_id: int):
     conn.commit()
     cursor.close()
     conn.close()
+
 
 def clear_database():
     conn = get_connection()
