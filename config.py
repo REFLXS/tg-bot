@@ -1,2 +1,2 @@
-#bot token
+# bot token
 TOKEN = '7510575544:AAE6DYrp_PYIAxVz5Sn9-ZuOY8khCSCyzDM'

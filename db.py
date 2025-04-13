@@ -25,12 +25,6 @@ def create_table():
 
 
 def add_note(user_id: str, note_text: str, note_end_date: str):
-    """
-    Добавляет новую заметку в базу данных
-    :param user_id: ID пользователя
-    :param note_text: Текст заметки
-    :param note_end_date: Дата и время заметки в формате строки
-    """
     conn = get_connection()
     cursor = conn.cursor()
     now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -74,8 +68,8 @@ def delete_all_user_notes(user_id: str):
 def get_user_notes(user_id: str):
     conn = get_connection()
     cursor = conn.cursor()
-    cursor.execute('SELECT id, note_text, note_end_date FROM notes WHERE user_id = ? ORDER BY note_end_date',
-                   (user_id,))
+    cursor.execute('SELECT id, note_text, note_end_date FROM notes WHERE user_id = ? AND (completed IS NULL OR '
+                   'completed = 0) ORDER BY note_end_date', (user_id,))
     notes = cursor.fetchall()
     cursor.close()
     conn.close()
