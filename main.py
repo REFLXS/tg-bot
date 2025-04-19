@@ -1,3 +1,4 @@
+from Notifier import Notifier
 from TimeParser import TimeParser
 import config
 import telebot
@@ -6,6 +7,8 @@ from telebot import types
 
 bot = telebot.TeleBot(config.TOKEN)
 parser = TimeParser()
+notifier = Notifier(bot)
+notifier.start()
 
 print(parser.parse("2023/12/31 23:59 Новый год"))
 temp_notes = {}
